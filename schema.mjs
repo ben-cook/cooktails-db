@@ -42,6 +42,7 @@ type Query {
   findDrinkByID(id: String): Drink
   findDrinksWithIngredient(ingredientName: String): [Drink]
   findDrinksWithIngredients(ingredientNames: [String]): [Drink]
+  searchDrinksByName(searchTerm: String): [Drink!]!
 }
 `;
 
@@ -59,6 +60,10 @@ const resolvers = {
         ingredientNames.every((ingredientName) =>
           drink.ingredients.includes(ingredientName)
         )
+      ),
+    searchDrinksByName: (_, { searchTerm }) =>
+      drinks.filter((drink) =>
+        drink.name.toLowerCase().includes(searchTerm.toLowerCase())
       ),
   },
 
