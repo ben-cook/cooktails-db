@@ -1,6 +1,7 @@
 import { makeExecutableSchema } from "@graphql-tools/schema";
 import { ingredients } from "./ingredients.mjs";
 import { drinks } from "./drinks.mjs";
+import jaroWinklerDistance from "jaro-winkler";
 
 // type Drink {
 //     id: ID!
@@ -16,7 +17,6 @@ type Ingredient {
   type: String
   alcoholic: Boolean
   ABV: String
-  idPlusOne: Int
 }
 
 type Drink {
@@ -43,27 +43,43 @@ type Query {
   findDrinksWithIngredient(ingredientName: String): [Drink]
   findDrinksWithIngredients(ingredientNames: [String]): [Drink]
   searchDrinksByName(searchTerm: String): [Drink!]!
+  fuzzySearchDrinksByName(searchTerm: String): [Drink!]!
 }
 `;
 
 const resolvers = {
   Query: {
     ingredients: () => ingredients,
+
     ingredient: (_, { id }) =>
       ingredients.find((ingredient) => ingredient.id === id),
+
     drinks: () => drinks,
+
     findDrinkByID: (_, { id }) => drinks.find((drink) => drink.id === id),
+
     findDrinksWithIngredient: (_, { ingredientName }) =>
       drinks.filter((drink) => drink.ingredients.includes(ingredientName)),
+
     findDrinksWithIngredients: (_, { ingredientNames }) =>
       drinks.filter((drink) =>
         ingredientNames.every((ingredientName) =>
           drink.ingredients.includes(ingredientName)
         )
       ),
+
     searchDrinksByName: (_, { searchTerm }) =>
       drinks.filter((drink) =>
         drink.name.toLowerCase().includes(searchTerm.toLowerCase())
+      ),
+
+    fuzzySearchDrinksByName: (_, { searchTerm }) =>
+      drinks.filter(
+        (drink) =>
+          drink.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          jaroWinklerDistance(drink.name, searchTerm, {
+            caseSensitive: false,
+          }) > 0.9
       ),
   },
 
@@ -73,10 +89,6 @@ const resolvers = {
         parent.ingredients.includes(ingredient.name)
       );
     },
-  },
-
-  Ingredient: {
-    idPlusOne: ({ id }) => parseInt(id) + 1,
   },
 };
 
