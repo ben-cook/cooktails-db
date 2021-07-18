@@ -60,7 +60,7 @@ const resolvers = {
     findDrinkByID: (_, { id }) => drinks.find((drink) => drink.id === id),
 
     findDrinkByName: (_, { name }) =>
-      drinks.find((drink) => drink.name === name),
+      drinks.find((drink) => drink.name.toLowerCase() === name.toLowerCase()),
 
     findDrinksWithIngredient: (_, { ingredientName }) =>
       drinks.filter((drink) => drink.ingredients.includes(ingredientName)),
@@ -79,7 +79,25 @@ const resolvers = {
 
     fuzzySearchDrinksByName: (_, { searchTerm, offset, limit }) => {
       if (searchTerm === "") {
-        return drinks.slice(offset, offset + limit);
+        // return drinks.slice(offset, offset + limit);
+        const popularDrinkNames = [
+          "Moscow Mule",
+          "Pina Colada",
+          "Mojito",
+          "Espresso Martini",
+          "Daiquiri",
+          "Cosmopolitan",
+          "Negroni",
+          "Aperol Spritz",
+          "Old Fashioned",
+          "Margarita",
+          "Martini",
+        ];
+        return drinks.filter((drink) =>
+          popularDrinkNames
+            .map((name) => name.toLowerCase())
+            .includes(drink.name.toLowerCase())
+        );
       } else {
         return drinks
           .filter(
