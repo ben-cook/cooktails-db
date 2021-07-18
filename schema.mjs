@@ -3,12 +3,6 @@ import { ingredients } from "./ingredients.mjs";
 import { drinks } from "./drinks.mjs";
 import jaroWinklerDistance from "jaro-winkler";
 
-// type Drink {
-//     id: ID!
-//     name: String!
-//     instructions: String!
-//   }
-
 const typeDefs = `
 type Ingredient {
   id: String
@@ -41,10 +35,12 @@ type Query {
   drinks: [Drink]
   findDrinkByID(id: String): Drink
   findDrinkByName(name: String): Drink
+  findIngredientByName(name: String): Ingredient
   findDrinksWithIngredient(ingredientName: String): [Drink]
-  findDrinksWithIngredients(ingredientNames: [String]): [Drink]
+  findDrinksWithIngredients(ingredientNames: [String], limit: Int, offset: Int): [Drink]
   searchDrinksByName(searchTerm: String): [Drink!]!
   fuzzySearchDrinksByName(searchTerm: String, limit: Int, offset: Int): [Drink!]!
+  randomDrink: Drink!
 }
 `;
 
@@ -62,15 +58,47 @@ const resolvers = {
     findDrinkByName: (_, { name }) =>
       drinks.find((drink) => drink.name.toLowerCase() === name.toLowerCase()),
 
+    findIngredientByName: (_, { name }) =>
+      ingredients.find(
+        (ingredient) => ingredient.name.toLowerCase() === name.toLowerCase()
+      ),
+
     findDrinksWithIngredient: (_, { ingredientName }) =>
       drinks.filter((drink) => drink.ingredients.includes(ingredientName)),
 
-    findDrinksWithIngredients: (_, { ingredientNames }) =>
-      drinks.filter((drink) =>
-        ingredientNames.every((ingredientName) =>
-          drink.ingredients.includes(ingredientName)
-        )
-      ),
+    findDrinksWithIngredients: (_, { ingredientNames, offset, limit }) => {
+      if (ingredientNames.length === 0) {
+        const popularDrinkNames = [
+          "Moscow Mule",
+          "Pina Colada",
+          "Mojito",
+          "Espresso Martini",
+          "Daiquiri",
+          "Cosmopolitan",
+          "Negroni",
+          "Aperol Spritz",
+          "Old Fashioned",
+          "Margarita",
+          "Martini",
+          "French 75",
+        ];
+        return drinks.filter((drink) =>
+          popularDrinkNames
+            .map((name) => name.toLowerCase())
+            .includes(drink.name.toLowerCase())
+        );
+      } else {
+        return drinks
+          .filter((drink) =>
+            ingredientNames.every((ingredientName) =>
+              drink.ingredients
+                .map((ingredient) => ingredient.toLowerCase())
+                .includes(ingredientName.toLowerCase())
+            )
+          )
+          .slice(offset, offset + limit);
+      }
+    },
 
     searchDrinksByName: (_, { searchTerm }) =>
       drinks.filter((drink) =>
@@ -111,6 +139,8 @@ const resolvers = {
           .slice(offset, offset + limit);
       }
     },
+
+    randomDrink: () => drinks[Math.floor(Math.random() * drinks.length)],
   },
 
   Drink: {
