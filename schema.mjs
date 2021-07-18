@@ -43,7 +43,7 @@ type Query {
   findDrinksWithIngredient(ingredientName: String): [Drink]
   findDrinksWithIngredients(ingredientNames: [String]): [Drink]
   searchDrinksByName(searchTerm: String): [Drink!]!
-  fuzzySearchDrinksByName(searchTerm: String): [Drink!]!
+  fuzzySearchDrinksByName(searchTerm: String, limit: Int, offset: Int): [Drink!]!
 }
 `;
 
@@ -73,14 +73,21 @@ const resolvers = {
         drink.name.toLowerCase().includes(searchTerm.toLowerCase())
       ),
 
-    fuzzySearchDrinksByName: (_, { searchTerm }) =>
-      drinks.filter(
-        (drink) =>
-          drink.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          jaroWinklerDistance(drink.name, searchTerm, {
-            caseSensitive: false,
-          }) > 0.9
-      ),
+    fuzzySearchDrinksByName: (_, { searchTerm, offset, limit }) => {
+      if (searchTerm === "") {
+        return [];
+      } else {
+        return drinks
+          .filter(
+            (drink) =>
+              drink.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+              jaroWinklerDistance(drink.name, searchTerm, {
+                caseSensitive: false,
+              }) > 0.9
+          )
+          .slice(offset, offset + limit);
+      }
+    },
   },
 
   Drink: {
