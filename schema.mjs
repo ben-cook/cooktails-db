@@ -40,6 +40,7 @@ type Query {
   ingredient: Ingredient
   drinks: [Drink]
   findDrinkByID(id: String): Drink
+  findDrinkByName(name: String): Drink
   findDrinksWithIngredient(ingredientName: String): [Drink]
   findDrinksWithIngredients(ingredientNames: [String]): [Drink]
   searchDrinksByName(searchTerm: String): [Drink!]!
@@ -58,6 +59,9 @@ const resolvers = {
 
     findDrinkByID: (_, { id }) => drinks.find((drink) => drink.id === id),
 
+    findDrinkByName: (_, { name }) =>
+      drinks.find((drink) => drink.name === name),
+
     findDrinksWithIngredient: (_, { ingredientName }) =>
       drinks.filter((drink) => drink.ingredients.includes(ingredientName)),
 
@@ -75,7 +79,7 @@ const resolvers = {
 
     fuzzySearchDrinksByName: (_, { searchTerm, offset, limit }) => {
       if (searchTerm === "") {
-        return [];
+        return drinks.slice(offset, offset + limit);
       } else {
         return drinks
           .filter(
@@ -93,7 +97,9 @@ const resolvers = {
   Drink: {
     ingredients(parent) {
       return ingredients.filter((ingredient) =>
-        parent.ingredients.includes(ingredient.name)
+        parent.ingredients
+          .map((ingredient) => ingredient.toLowerCase())
+          .includes(ingredient.name.toLowerCase())
       );
     },
   },
