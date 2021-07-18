@@ -92,6 +92,7 @@ const resolvers = {
           "Old Fashioned",
           "Margarita",
           "Martini",
+          "French 75",
         ];
         return drinks.filter((drink) =>
           popularDrinkNames
